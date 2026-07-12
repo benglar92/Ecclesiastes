@@ -80,5 +80,116 @@ var VERSES_DATA = {
         }
       ]
     }
+    },
+    {
+      "chapter": 2,
+      "title": "The Vanity of Pleasure and Toil",
+      "verses": [
+        {
+          "verse": 1,
+          "text": "I said to myself, \"Come now, I will make a test of pleasure; enjoy yourself.\" But behold, this also was vanity."
+        },
+        {
+          "verse": 2,
+          "text": "I said of laughter, \"It is mad,\" and of pleasure, \"What use is it?\""
+        },
+        {
+          "verse": 3,
+          "text": "I searched with my mind how to cheer my body with wine—my mind still guiding me with wisdom—and how to lay hold on folly, till I might see what was good for the sons of men to do under heaven during the few days of their life."
+        },
+        {
+          "verse": 4,
+          "text": "I made great works; I built houses and planted vineyards for myself;"
+        },
+        {
+          "verse": 5,
+          "text": "I made myself gardens and parks, and planted in them all kinds of fruit trees."
+        },
+        {
+          "verse": 6,
+          "text": "I made myself pools from which to water the forest of growing trees."
+        },
+        {
+          "verse": 7,
+          "text": "I bought male and female slaves, and had slaves who were born in my house; I had also great possessions of herds and flocks, more than any who had been before me in Jerusalem."
+        },
+        {
+          "verse": 8,
+          "text": "I also gathered for myself silver and gold and the treasure of kings and provinces; I got singers, both men and women, and many concubines, man's delight."
+        },
+        {
+          "verse": 9,
+          "text": "So I became great and surpassed all who were before me in Jerusalem; also my wisdom remained with me."
+        },
+        {
+          "verse": 10,
+          "text": "And whatever my eyes desired I did not keep from them; I kept my heart from no pleasure, for my heart found pleasure in all my toil, and this was my reward for all my toil."
+        },
+        {
+          "verse": 11,
+          "text": "Then I considered all that my hands had done and the toil I had spent in doing it, and behold, all was vanity and a striving after wind, and there was nothing to be gained under the sun."
+        },
+        {
+          "verse": 12,
+          "text": "So I turned to consider wisdom and madness and folly; for what can the man do who comes after the king? Only what he has already done."
+        },
+        {
+          "verse": 13,
+          "text": "Then I saw that wisdom excels folly as light excels darkness."
+        },
+        {
+          "verse": 14,
+          "text": "The wise man has his eyes in his head, but the fool walks in darkness; and yet I perceived that one fate comes to all of them."
+        },
+        {
+          "verse": 15,
+          "text": "Then I said to myself, \"What befalls the fool will befall me also; why then have I been so very wise?\" And I said to myself that this also is vanity."
+        },
+        {
+          "verse": 16,
+          "text": "For of the wise man as of the fool there is no enduring remembrance, seeing that in the days to come all will have been long forgotten. How the wise man dies just like the fool!"
+        },
+        {
+          "verse": 17,
+          "text": "So I hated life, because what is done under the sun was grievous to me; for all is vanity and a striving after wind."
+        },
+        {
+          "verse": 18,
+          "text": "I hated all my toil in which I had toiled under the sun, seeing that I must leave it to the man who will come after me;"
+        },
+        {
+          "verse": 19,
+          "text": "and who knows whether he will be a wise man or a fool? Yet he will be master of all for which I toiled and used my wisdom under the sun. This also is vanity."
+        },
+        {
+          "verse": 20,
+          "text": "So I turned about and gave my heart up to despair over all the toil of my labors under the sun,"
+        },
+        {
+          "verse": 21,
+          "text": "because sometimes a man who has toiled with wisdom and knowledge and skill must leave all to be enjoyed by a man who did not toil for it. This also is vanity and a great evil."
+        },
+        {
+          "verse": 22,
+          "text": "What has a man from all the toil and strain with which he toils beneath the sun?"
+        },
+        {
+          "verse": 23,
+          "text": "For all his days are full of pain, and his work is a vexation; even in the night his mind does not rest. This also is vanity."
+        },
+        {
+          "verse": 24,
+          "text": "There is nothing better for a man than that he should eat and drink and find enjoyment in his toil. This also, I saw, is from the hand of God;"
+        },
+        {
+          "verse": 25,
+          "text": "for apart from him who can eat or who can have enjoyment?"
+        },
+        {
+          "verse": 26,
+          "text": "For to the man who pleases him God gives wisdom and knowledge and joy; but to the sinner he gives the work of gathering and heaping, only to give to one who pleases God. This also is vanity and a striving after wind."
+        }
+      ]
+    }
   ]
 };
