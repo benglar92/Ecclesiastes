@@ -1,0 +1,84 @@
+var VERSES_DATA = {
+  "book": "Ecclesiastes",
+  "translation": "RSV",
+  "chapters": [
+    {
+      "chapter": 1,
+      "title": "The Preacher's Opening",
+      "verses": [
+        {
+          "verse": 1,
+          "text": "The words of the Preacher, the son of David, king in Jerusalem."
+        },
+        {
+          "verse": 2,
+          "text": "Vanity of vanities, says the Preacher, vanity of vanities! All is vanity."
+        },
+        {
+          "verse": 3,
+          "text": "What does man gain by all the toil at which he toils under the sun?"
+        },
+        {
+          "verse": 4,
+          "text": "A generation goes, and a generation comes, but the earth remains for ever."
+        },
+        {
+          "verse": 5,
+          "text": "The sun rises and the sun goes down, and hastens to the place where it rises."
+        },
+        {
+          "verse": 6,
+          "text": "The wind blows to the south, and goes round to the north; round and round goes the wind, and on its circuits the wind returns."
+        },
+        {
+          "verse": 7,
+          "text": "All streams run to the sea, but the sea is not full; to the place where the streams flow, there they flow again."
+        },
+        {
+          "verse": 8,
+          "text": "All things are full of weariness; a man cannot utter it; the eye is not satisfied with seeing, nor the ear filled with hearing."
+        },
+        {
+          "verse": 9,
+          "text": "What has been is what will be, and what has been done is what will be done; and there is nothing new under the sun."
+        },
+        {
+          "verse": 10,
+          "text": "Is there a thing of which it is said, \"See, this is new\"? It has been already, in the ages before us."
+        },
+        {
+          "verse": 11,
+          "text": "There is no remembrance of former things, nor will there be any remembrance of later things yet to happen among those who come after."
+        },
+        {
+          "verse": 12,
+          "text": "I the Preacher have been king over Israel in Jerusalem."
+        },
+        {
+          "verse": 13,
+          "text": "And I applied my mind to seek and to search out by wisdom all that is done under heaven; it is an unhappy business that God has given to the sons of men to be busy with."
+        },
+        {
+          "verse": 14,
+          "text": "I have seen everything that is done under the sun; and behold, all is vanity and a striving after wind."
+        },
+        {
+          "verse": 15,
+          "text": "What is crooked cannot be made straight, and what is lacking cannot be numbered."
+        },
+        {
+          "verse": 16,
+          "text": "I said to myself, \"I have acquired great wisdom, surpassing all who were over Jerusalem before me; and my mind has had great experience of wisdom and knowledge.\""
+        },
+        {
+          "verse": 17,
+          "text": "And I applied my mind to know wisdom and to know madness and folly. I perceived that this also is but a striving after wind."
+        },
+        {
+          "verse": 18,
+          "text": "For in much wisdom is much vexation, and he who increases knowledge increases sorrow."
+        }
+      ]
+    }
+  ]
+};

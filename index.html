@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ecclesiastes — Memorize</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<header>
+  <h1>Ecclesiastes</h1>
+  <span class="translation">RSV</span>
+  <nav class="chapter-nav" id="chapter-nav"></nav>
+</header>
+
+<main>
+  <div class="controls">
+    <label for="difficulty-slider">Difficulty</label>
+    <div class="difficulty-group">
+      <input type="range" id="difficulty-slider" min="1" max="5" value="1" />
+      <span id="difficulty-label"></span>
+    </div>
+    <div class="progress-summary" id="progress-summary">
+      <span><span class="progress-dot dot-mastered"></span><span id="summary-mastered">0 mastered</span></span>
+      <span><span class="progress-dot dot-progress"></span><span id="summary-progress">0 in progress</span></span>
+      <span><span class="progress-dot dot-new"></span><span id="summary-new">0 new</span></span>
+    </div>
+  </div>
+
+  <div class="verse-list" id="verse-list"></div>
+</main>
+
+<script src="verses.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
