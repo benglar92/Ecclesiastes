@@ -370,30 +370,42 @@ function renderChapter(chapterNum) {
 // ── Init ─────────────────────────────────────────────────────────────────────
 
 async function init() {
-  loadProgress();
+  try {
+    loadProgress();
 
-  data = VERSES_DATA;
+    if (typeof VERSES_DATA !== 'undefined') {
+      data = VERSES_DATA;
+    } else {
+      const res = await fetch('verses.json');
+      data = await res.json();
+    }
 
-  // Build chapter nav
-  const nav = document.getElementById('chapter-nav');
-  for (const ch of data.chapters) {
-    const btn = document.createElement('button');
-    btn.className = 'chapter-btn';
-    btn.dataset.chapter = ch.chapter;
-    btn.textContent = `Chapter ${ch.chapter}`;
-    btn.addEventListener('click', () => renderChapter(ch.chapter));
-    nav.appendChild(btn);
-  }
+    // Build chapter nav
+    const nav = document.getElementById('chapter-nav');
+    for (const ch of data.chapters) {
+      const btn = document.createElement('button');
+      btn.className = 'chapter-btn';
+      btn.dataset.chapter = ch.chapter;
+      btn.textContent = `Chapter ${ch.chapter}`;
+      btn.addEventListener('click', () => renderChapter(ch.chapter));
+      nav.appendChild(btn);
+    }
 
-  // Difficulty slider
-  const slider = document.getElementById('difficulty-slider');
-  slider.addEventListener('input', () => {
+    // Difficulty slider
+    const slider = document.getElementById('difficulty-slider');
+    slider.addEventListener('input', () => {
+      setDifficulty(slider.value);
+      renderChapter(currentChapter);
+    });
     setDifficulty(slider.value);
-    renderChapter(currentChapter);
-  });
-  setDifficulty(slider.value);
 
-  renderChapter(data.chapters[0].chapter);
+    renderChapter(data.chapters[0].chapter);
+  } catch (err) {
+    document.getElementById('verse-list').innerHTML =
+      `<p style="font-family:system-ui;color:#c0392b;padding:1rem;">
+        Failed to load verses: ${err.message}
+      </p>`;
+  }
 }
 
 document.addEventListener('DOMContentLoaded', init);
