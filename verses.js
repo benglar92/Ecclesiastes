@@ -189,6 +189,100 @@ var VERSES_DATA = {
           "text": "For to the man who pleases him God gives wisdom and knowledge and joy; but to the sinner he gives the work of gathering and heaping, only to give to one who pleases God. This also is vanity and a striving after wind."
         }
       ]
+    },
+    {
+      "chapter": 3,
+      "title": "A Time for Everything",
+      "verses": [
+        {
+          "verse": 1,
+          "text": "For everything there is a season, and a time for every matter under heaven:"
+        },
+        {
+          "verse": 2,
+          "text": "a time to be born, and a time to die; a time to plant, and a time to pluck up what is planted;"
+        },
+        {
+          "verse": 3,
+          "text": "a time to kill, and a time to heal; a time to break down, and a time to build up;"
+        },
+        {
+          "verse": 4,
+          "text": "a time to weep, and a time to laugh; a time to mourn, and a time to dance;"
+        },
+        {
+          "verse": 5,
+          "text": "a time to throw away stones, and a time to gather stones together; a time to embrace, and a time to refrain from embracing;"
+        },
+        {
+          "verse": 6,
+          "text": "a time to seek, and a time to lose; a time to keep, and a time to throw away;"
+        },
+        {
+          "verse": 7,
+          "text": "a time to tear, and a time to sew; a time to keep silence, and a time to speak;"
+        },
+        {
+          "verse": 8,
+          "text": "a time to love, and a time to hate; a time for war, and a time for peace."
+        },
+        {
+          "verse": 9,
+          "text": "What gain have the workers from their toil?"
+        },
+        {
+          "verse": 10,
+          "text": "I have seen the business that God has given to everyone to be busy with."
+        },
+        {
+          "verse": 11,
+          "text": "He has made everything suitable for its time; moreover he has put a sense of past and future into their minds, yet they cannot find out what God has done from the beginning to the end."
+        },
+        {
+          "verse": 12,
+          "text": "I know that there is nothing better for them than to be happy and enjoy themselves as long as they live;"
+        },
+        {
+          "verse": 13,
+          "text": "moreover, it is God's gift that all should eat and drink and take pleasure in all their toil."
+        },
+        {
+          "verse": 14,
+          "text": "I know that whatever God does endures forever; nothing can be added to it, nor anything taken from it; God has done this, so that all should stand in awe before him."
+        },
+        {
+          "verse": 15,
+          "text": "That which is, already has been; that which is to be, already is; and God seeks out what has gone by."
+        },
+        {
+          "verse": 16,
+          "text": "Moreover I saw under the sun that in the place of justice, wickedness was there, and in the place of righteousness, wickedness was there as well."
+        },
+        {
+          "verse": 17,
+          "text": "I said in my heart, God will judge the righteous and the wicked, for he has appointed a time for every matter, and for every work."
+        },
+        {
+          "verse": 18,
+          "text": "I said in my heart with regard to human beings that God is testing them to show that they are but animals."
+        },
+        {
+          "verse": 19,
+          "text": "For the fate of humans and the fate of animals is the same; as one dies, so dies the other. They all have the same breath, and humans have no advantage over the animals; for all is vanity."
+        },
+        {
+          "verse": 20,
+          "text": "All go to one place; all are from the dust, and all turn to dust again."
+        },
+        {
+          "verse": 21,
+          "text": "Who knows whether the human spirit goes upward and the spirit of animals goes downward to the earth?"
+        },
+        {
+          "verse": 22,
+          "text": "So I saw that there is nothing better than that all should enjoy their work, for that is their lot; who can bring them to see what will be after them?"
+        }
+      ]
     }
   ]
 };
