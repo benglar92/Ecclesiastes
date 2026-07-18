@@ -15,11 +15,19 @@
 </header>
 
 <main>
+  <div class="mode-tabs">
+    <button class="mode-btn active" data-mode="cloze">Fill in the Blank</button>
+    <button class="mode-btn" data-mode="flashcard">Flashcard</button>
+    <button class="mode-btn" data-mode="mc">Multiple Choice</button>
+  </div>
+
   <div class="controls">
-    <label for="difficulty-slider">Difficulty</label>
-    <div class="difficulty-group">
-      <input type="range" id="difficulty-slider" min="1" max="5" value="1" />
-      <span id="difficulty-label"></span>
+    <div id="difficulty-controls" style="display:flex;align-items:center;gap:16px;">
+      <label for="difficulty-slider">Difficulty</label>
+      <div class="difficulty-group">
+        <input type="range" id="difficulty-slider" min="1" max="5" value="1" />
+        <span id="difficulty-label"></span>
+      </div>
     </div>
     <div class="progress-summary" id="progress-summary">
       <span><span class="progress-dot dot-mastered"></span><span id="summary-mastered">0 mastered</span></span>

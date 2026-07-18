@@ -3,9 +3,8 @@
 // ── Constants ────────────────────────────────────────────────────────────────
 
 const STORAGE_KEY = 'ecclesiastes-progress';
-const MASTERED_THRESHOLD = 3; // consecutive correct to mark mastered
+const MASTERED_THRESHOLD = 3;
 
-// Words too short/trivial to blank (articles, short prepositions, etc.)
 const SKIP_WORDS = new Set([
   'a','an','the','of','in','to','and','or','but','for','nor','so','yet',
   'at','by','it','its','is','as','be','do','go','he','me','my','no','on',
@@ -14,21 +13,20 @@ const SKIP_WORDS = new Set([
 
 // ── State ────────────────────────────────────────────────────────────────────
 
-let data = null;        // loaded JSON
+let data = null;
 let currentChapter = 1;
-let difficulty = 1;     // 1 = few blanks … 5 = many blanks
-let progress = {};      // { "1:3": { status, streak, attempts } }
+let difficulty = 1;
+let progress = {};
+let studyMode = 'cloze';  // 'cloze' | 'flashcard' | 'mc'
+let sessionIndex = 0;
 
-// ── Utility ──────────────────────────────────────────────────────────────────
+// ── Progress ─────────────────────────────────────────────────────────────────
 
-function progressKey(chapter, verse) {
-  return `${chapter}:${verse}`;
-}
+function progressKey(chapter, verse) { return `${chapter}:${verse}`; }
 
 function loadProgress() {
-  try {
-    progress = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
-  } catch { progress = {}; }
+  try { progress = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
+  catch { progress = {}; }
 }
 
 function saveProgress() {
@@ -37,66 +35,23 @@ function saveProgress() {
 
 function getVerseProgress(chapter, verse) {
   const key = progressKey(chapter, verse);
-  if (!progress[key]) {
-    progress[key] = { status: 'not-started', streak: 0, attempts: 0 };
-  }
+  if (!progress[key]) progress[key] = { status: 'not-started', streak: 0, attempts: 0 };
   return progress[key];
 }
 
-function statusLabel(status) {
-  return status === 'mastered' ? 'Mastered'
-       : status === 'in-progress' ? 'In progress'
-       : 'Not started';
+function statusLabel(s) {
+  return s === 'mastered' ? 'Mastered' : s === 'in-progress' ? 'In progress' : 'Not started';
 }
 
-// ── Blank selection ──────────────────────────────────────────────────────────
+// ── Utility ──────────────────────────────────────────────────────────────────
 
-/**
- * Given verse text and difficulty (1-5), return an array of token objects:
- *   { type: 'text'|'blank', text: string, index?: number }
- *
- * Difficulty maps to a fraction of "blankable" words to hide:
- *   1 → ~20%  2 → ~35%  3 → ~50%  4 → ~65%  5 → ~80%
- */
-function tokenize(text, chapter, verse, diff) {
-  const fractions = [0, 0.20, 0.35, 0.50, 0.65, 0.80];
-  const fraction = fractions[diff] || 0.20;
-
-  // Split on word boundaries, keeping spaces and punctuation as separate tokens
-  const rawTokens = text.split(/(\s+|(?=[.,;:!?"()])|(?<=[.,;:!?"()]))/);
-  const words = rawTokens.filter(t => /[A-Za-z']/.test(t));
-
-  // Determine which words are blankable
-  const blankable = words
-    .map((w, i) => ({ w, i }))
-    .filter(({ w }) => {
-      const core = w.replace(/[^A-Za-z']/g, '').toLowerCase();
-      return core.length >= 3 && !SKIP_WORDS.has(core);
-    });
-
-  // Stable shuffle seeded per verse so blanks don't change on re-render
-  const seed = chapter * 1000 + verse + diff * 100;
-  const shuffled = seededShuffle(blankable, seed);
-  const count = Math.max(1, Math.round(shuffled.length * fraction));
-  const blankIndices = new Set(shuffled.slice(0, count).map(b => b.i));
-
-  // Build token list, re-splitting on the word index
-  let wordIdx = 0;
-  const tokens = [];
-  for (const raw of rawTokens) {
-    if (!raw) continue;
-    if (/[A-Za-z']/.test(raw)) {
-      if (blankIndices.has(wordIdx)) {
-        tokens.push({ type: 'blank', text: raw });
-      } else {
-        tokens.push({ type: 'text', text: raw });
-      }
-      wordIdx++;
-    } else {
-      tokens.push({ type: 'text', text: raw });
-    }
+function shuffleArray(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
   }
-  return tokens;
+  return a;
 }
 
 function seededShuffle(arr, seed) {
@@ -110,7 +65,101 @@ function seededShuffle(arr, seed) {
   return a;
 }
 
-// ── Render helpers ───────────────────────────────────────────────────────────
+function recordVerseResult(chapter, verse, correct) {
+  const vp = getVerseProgress(chapter, verse);
+  vp.attempts = (vp.attempts || 0) + 1;
+  if (correct) {
+    vp.streak = (vp.streak || 0) + 1;
+    vp.status = vp.streak >= MASTERED_THRESHOLD ? 'mastered' : 'in-progress';
+  } else {
+    vp.streak = 0;
+    vp.status = 'in-progress';
+  }
+  saveProgress();
+  updateProgressSummary();
+  return vp;
+}
+
+// ── Mode system ──────────────────────────────────────────────────────────────
+
+function setMode(mode) {
+  studyMode = mode;
+  sessionIndex = 0;
+  document.querySelectorAll('.mode-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.mode === mode)
+  );
+  document.getElementById('difficulty-controls').style.display =
+    mode === 'cloze' ? 'flex' : 'none';
+  renderCurrentMode();
+}
+
+function renderCurrentMode() {
+  updateProgressSummary();
+  const chapter = data.chapters.find(c => c.chapter === currentChapter);
+  if (!chapter) return;
+  if (studyMode === 'cloze')     renderCloze(chapter);
+  else if (studyMode === 'flashcard') renderFlashcard(chapter);
+  else                           renderMC(chapter);
+}
+
+// ── Progress summary ─────────────────────────────────────────────────────────
+
+function updateProgressSummary() {
+  const chapter = data.chapters.find(c => c.chapter === currentChapter);
+  if (!chapter) return;
+  let mastered = 0, inProgress = 0, notStarted = 0;
+  for (const v of chapter.verses) {
+    const vp = getVerseProgress(currentChapter, v.verse);
+    if (vp.status === 'mastered') mastered++;
+    else if (vp.status === 'in-progress') inProgress++;
+    else notStarted++;
+  }
+  document.getElementById('summary-mastered').textContent = `${mastered} mastered`;
+  document.getElementById('summary-progress').textContent = `${inProgress} in progress`;
+  document.getElementById('summary-new').textContent = `${notStarted} new`;
+}
+
+// ── Difficulty ───────────────────────────────────────────────────────────────
+
+const DIFF_LABELS = ['', 'Beginner (few blanks)', 'Easy', 'Medium', 'Hard', 'Expert (many blanks)'];
+
+function setDifficulty(val) {
+  difficulty = parseInt(val);
+  document.getElementById('difficulty-label').textContent = DIFF_LABELS[difficulty] || '';
+}
+
+// ── Cloze mode ───────────────────────────────────────────────────────────────
+
+function tokenize(text, chapter, verse, diff) {
+  const fractions = [0, 0.20, 0.35, 0.50, 0.65, 0.80];
+  const fraction = fractions[diff] || 0.20;
+  const rawTokens = text.split(/(\s+|(?=[.,;:!?"()])|(?<=[.,;:!?"()]))/);
+  const words = rawTokens.filter(t => /[A-Za-z']/.test(t));
+  const blankable = words
+    .map((w, i) => ({ w, i }))
+    .filter(({ w }) => {
+      const core = w.replace(/[^A-Za-z']/g, '').toLowerCase();
+      return core.length >= 3 && !SKIP_WORDS.has(core);
+    });
+  const seed = chapter * 1000 + verse + diff * 100;
+  const shuffled = seededShuffle(blankable, seed);
+  const count = Math.max(1, Math.round(shuffled.length * fraction));
+  const blankIndices = new Set(shuffled.slice(0, count).map(b => b.i));
+  let wordIdx = 0;
+  const tokens = [];
+  for (const raw of rawTokens) {
+    if (!raw) continue;
+    if (/[A-Za-z']/.test(raw)) {
+      tokens.push(blankIndices.has(wordIdx)
+        ? { type: 'blank', text: raw }
+        : { type: 'text', text: raw });
+      wordIdx++;
+    } else {
+      tokens.push({ type: 'text', text: raw });
+    }
+  }
+  return tokens;
+}
 
 function buildVerseCard(chapterNum, verseObj) {
   const { verse, text } = verseObj;
@@ -123,7 +172,6 @@ function buildVerseCard(chapterNum, verseObj) {
   card.dataset.chapter = chapterNum;
   card.dataset.verse = verse;
 
-  // Header
   const header = document.createElement('div');
   header.className = 'verse-header';
   header.innerHTML = `
@@ -132,11 +180,9 @@ function buildVerseCard(chapterNum, verseObj) {
   `;
   card.appendChild(header);
 
-  // Body
   const body = document.createElement('div');
   body.className = 'verse-body';
 
-  // Verse text with blanks
   const verseTextEl = document.createElement('div');
   verseTextEl.className = 'verse-text';
 
@@ -166,20 +212,15 @@ function buildVerseCard(chapterNum, verseObj) {
   }
   body.appendChild(verseTextEl);
 
-  // Feedback line
   const feedback = document.createElement('div');
   feedback.className = 'feedback';
   body.appendChild(feedback);
 
-  // Streak
-  const streak = document.createElement('div');
-  streak.className = 'streak-bar';
-  if (vp.streak > 0) {
-    streak.textContent = `Streak: ${vp.streak} / ${MASTERED_THRESHOLD}`;
-  }
-  body.appendChild(streak);
+  const streakEl = document.createElement('div');
+  streakEl.className = 'streak-bar';
+  if (vp.streak > 0) streakEl.textContent = `Streak: ${vp.streak} / ${MASTERED_THRESHOLD}`;
+  body.appendChild(streakEl);
 
-  // Actions
   const actions = document.createElement('div');
   actions.className = 'verse-actions';
 
@@ -192,7 +233,7 @@ function buildVerseCard(chapterNum, verseObj) {
 
     const resetBtn = document.createElement('button');
     resetBtn.textContent = 'Reset';
-    resetBtn.addEventListener('click', () => resetVerse(card, chapterNum, verseObj));
+    resetBtn.addEventListener('click', () => card.replaceWith(buildVerseCard(chapterNum, verseObj)));
     actions.appendChild(resetBtn);
 
     const revealBtn = document.createElement('button');
@@ -201,13 +242,13 @@ function buildVerseCard(chapterNum, verseObj) {
     revealBtn.addEventListener('click', () => revealVerse(card));
     actions.appendChild(revealBtn);
   } else {
-    // All words were skipped (very short verse); show full text
     feedback.textContent = 'Verse too short to blank — read and mark done.';
     const markBtn = document.createElement('button');
     markBtn.className = 'primary';
     markBtn.textContent = 'Mark as done';
     markBtn.addEventListener('click', () => {
-      recordResult(chapterNum, verse, true, card);
+      recordVerseResult(chapterNum, verse, true);
+      refreshCardStatus(card);
     });
     actions.appendChild(markBtn);
   }
@@ -216,8 +257,6 @@ function buildVerseCard(chapterNum, verseObj) {
   card.appendChild(body);
   return card;
 }
-
-// ── Check / submit ───────────────────────────────────────────────────────────
 
 function normalize(str) {
   return str.trim().toLowerCase().replace(/[^a-z']/g, '');
@@ -232,59 +271,41 @@ function submitVerse(card) {
 
   inputs.forEach(input => {
     if (input.classList.contains('revealed')) return;
-    const answer = input.dataset.answer;
     const val = input.value;
     if (!val.trim()) { allCorrect = false; return; }
     anyFilled = true;
-    const ok = normalize(val) === normalize(answer);
+    const ok = normalize(val) === normalize(input.dataset.answer);
     input.classList.toggle('correct', ok);
     input.classList.toggle('incorrect', !ok);
     if (!ok) allCorrect = false;
   });
 
   if (!anyFilled) {
-    setFeedback(card, 'Type the missing words above, then check.', '');
+    setClozeFeedback(card, 'Type the missing words above, then check.', '');
     return;
   }
 
-  recordResult(chapter, verse, allCorrect, card);
-}
-
-function recordResult(chapter, verse, allCorrect, card) {
-  const vp = getVerseProgress(chapter, verse);
-  vp.attempts = (vp.attempts || 0) + 1;
+  const vp = recordVerseResult(chapter, verse, allCorrect);
+  refreshCardStatus(card);
 
   if (allCorrect) {
-    vp.streak = (vp.streak || 0) + 1;
-    if (vp.streak >= MASTERED_THRESHOLD) {
-      vp.status = 'mastered';
-    } else {
-      vp.status = 'in-progress';
-    }
-    setFeedback(card, allCorrect ? `Correct! (${vp.streak}/${MASTERED_THRESHOLD})` : 'Done!', 'correct');
+    setClozeFeedback(card, `Correct! (${vp.streak}/${MASTERED_THRESHOLD})`, 'correct');
   } else {
-    vp.streak = 0;
-    vp.status = 'in-progress';
-    setFeedback(card, 'Not quite — check the highlighted blanks.', 'wrong');
+    setClozeFeedback(card, 'Not quite — check the highlighted blanks.', 'wrong');
   }
-
-  saveProgress();
-  refreshCardStatus(card, vp);
-  updateProgressSummary();
 }
 
-function setFeedback(card, msg, type) {
+function setClozeFeedback(card, msg, type) {
   const fb = card.querySelector('.feedback');
   fb.textContent = msg;
   fb.className = `feedback ${type}`;
-  const streak = card.querySelector('.streak-bar');
-  const chapter = parseInt(card.dataset.chapter);
-  const verse = parseInt(card.dataset.verse);
-  const vp = getVerseProgress(chapter, verse);
-  streak.textContent = vp.streak > 0 ? `Streak: ${vp.streak} / ${MASTERED_THRESHOLD}` : '';
+  const streakEl = card.querySelector('.streak-bar');
+  const vp = getVerseProgress(parseInt(card.dataset.chapter), parseInt(card.dataset.verse));
+  streakEl.textContent = vp.streak > 0 ? `Streak: ${vp.streak} / ${MASTERED_THRESHOLD}` : '';
 }
 
-function refreshCardStatus(card, vp) {
+function refreshCardStatus(card) {
+  const vp = getVerseProgress(parseInt(card.dataset.chapter), parseInt(card.dataset.verse));
   card.className = `verse-card ${vp.status}`;
   const statusEl = card.querySelector('.verse-status');
   statusEl.className = `verse-status ${vp.status}`;
@@ -292,79 +313,201 @@ function refreshCardStatus(card, vp) {
 }
 
 function revealVerse(card) {
-  const inputs = card.querySelectorAll('.blank-word input');
-  inputs.forEach(input => {
+  const chapter = parseInt(card.dataset.chapter);
+  const verse = parseInt(card.dataset.verse);
+  card.querySelectorAll('.blank-word input').forEach(input => {
     if (!input.classList.contains('correct')) {
       input.value = input.dataset.answer;
       input.classList.remove('incorrect');
       input.classList.add('revealed');
     }
   });
-  setFeedback(card, 'Answers shown. Reset to try again.', 'partial');
-  const chapter = parseInt(card.dataset.chapter);
-  const verse = parseInt(card.dataset.verse);
+  setClozeFeedback(card, 'Answers shown. Reset to try again.', 'partial');
   const vp = getVerseProgress(chapter, verse);
   if (vp.status === 'not-started') {
     vp.status = 'in-progress';
     vp.streak = 0;
     saveProgress();
-    refreshCardStatus(card, vp);
+    refreshCardStatus(card);
     updateProgressSummary();
   }
 }
 
-function resetVerse(card, chapter, verseObj) {
-  const newCard = buildVerseCard(chapter, verseObj);
-  card.replaceWith(newCard);
-}
-
-// ── Progress summary ─────────────────────────────────────────────────────────
-
-function updateProgressSummary() {
-  const chapter = data.chapters.find(c => c.chapter === currentChapter);
-  if (!chapter) return;
-  let mastered = 0, inProgress = 0, notStarted = 0;
-  for (const v of chapter.verses) {
-    const vp = getVerseProgress(currentChapter, v.verse);
-    if (vp.status === 'mastered') mastered++;
-    else if (vp.status === 'in-progress') inProgress++;
-    else notStarted++;
-  }
-  const total = chapter.verses.length;
-  document.getElementById('summary-mastered').textContent = `${mastered} mastered`;
-  document.getElementById('summary-progress').textContent = `${inProgress} in progress`;
-  document.getElementById('summary-new').textContent = `${notStarted} new`;
-}
-
-// ── Difficulty ───────────────────────────────────────────────────────────────
-
-const DIFF_LABELS = ['', 'Beginner (few blanks)', 'Easy', 'Medium', 'Hard', 'Expert (many blanks)'];
-
-function setDifficulty(val) {
-  difficulty = parseInt(val);
-  document.getElementById('difficulty-label').textContent = DIFF_LABELS[difficulty] || '';
-}
-
-// ── Render chapter ───────────────────────────────────────────────────────────
-
-function renderChapter(chapterNum) {
-  currentChapter = chapterNum;
-  const chapter = data.chapters.find(c => c.chapter === chapterNum);
-  if (!chapter) return;
-
-  document.title = `Ecclesiastes ${chapterNum} — Memorize`;
-
-  // Update nav buttons
-  document.querySelectorAll('.chapter-btn').forEach(btn => {
-    btn.classList.toggle('active', parseInt(btn.dataset.chapter) === chapterNum);
-  });
-
+function renderCloze(chapter) {
   const list = document.getElementById('verse-list');
   list.innerHTML = '';
   for (const verseObj of chapter.verses) {
-    list.appendChild(buildVerseCard(chapterNum, verseObj));
+    list.appendChild(buildVerseCard(chapter.chapter, verseObj));
   }
-  updateProgressSummary();
+}
+
+// ── Flashcard mode ───────────────────────────────────────────────────────────
+
+function renderFlashcard(chapter) {
+  const verses = chapter.verses;
+  const pairs = verses.length - 1;
+  const i = Math.min(sessionIndex, pairs - 1);
+  const front = verses[i];
+  const back = verses[i + 1];
+
+  const list = document.getElementById('verse-list');
+  list.innerHTML = '';
+
+  const scene = document.createElement('div');
+  scene.className = 'fc-scene';
+
+  const card = document.createElement('div');
+  card.className = 'fc-card';
+
+  const frontEl = document.createElement('div');
+  frontEl.className = 'fc-face fc-front';
+  frontEl.innerHTML = `
+    <div class="fc-label">Chapter ${chapter.chapter} · Verse ${front.verse}</div>
+    <div class="fc-text">${front.text}</div>
+    <div class="fc-hint">Tap to reveal next verse →</div>
+  `;
+
+  const backEl = document.createElement('div');
+  backEl.className = 'fc-face fc-back';
+  backEl.innerHTML = `
+    <div class="fc-label">Chapter ${chapter.chapter} · Verse ${back.verse}</div>
+    <div class="fc-text">${back.text}</div>
+    <div class="fc-hint">← Tap to flip back</div>
+  `;
+
+  card.appendChild(frontEl);
+  card.appendChild(backEl);
+  card.addEventListener('click', () => card.classList.toggle('flipped'));
+  scene.appendChild(card);
+  list.appendChild(scene);
+
+  list.appendChild(buildSessionNav(
+    pairs, i,
+    () => { sessionIndex = Math.max(0, sessionIndex - 1); renderFlashcard(chapter); },
+    () => { sessionIndex = Math.min(pairs - 1, sessionIndex + 1); renderFlashcard(chapter); },
+    `Card ${i + 1} of ${pairs}`
+  ));
+}
+
+// ── Multiple choice mode ─────────────────────────────────────────────────────
+
+function renderMC(chapter) {
+  const verses = chapter.verses;
+  const pairs = verses.length - 1;
+  const i = sessionIndex % pairs;
+  const questionVerse = verses[i];
+  const correctVerse = verses[i + 1];
+
+  const pool = verses.filter((_, idx) => idx !== i && idx !== i + 1);
+  const wrong = shuffleArray(pool).slice(0, 3);
+  const options = shuffleArray([correctVerse, ...wrong]);
+
+  const list = document.getElementById('verse-list');
+  list.innerHTML = '';
+
+  const container = document.createElement('div');
+  container.className = 'mc-container';
+
+  const prompt = document.createElement('div');
+  prompt.innerHTML = `
+    <div class="mc-prompt-label">Chapter ${chapter.chapter} · Verse ${questionVerse.verse}</div>
+    <div class="mc-prompt-text">${questionVerse.text}</div>
+    <div class="mc-question">What comes next?</div>
+  `;
+  container.appendChild(prompt);
+
+  const optionsEl = document.createElement('div');
+  optionsEl.className = 'mc-options';
+
+  let answered = false;
+
+  options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'mc-option';
+    btn.textContent = opt.text;
+    btn.addEventListener('click', () => {
+      if (answered) return;
+      answered = true;
+
+      const correct = opt.verse === correctVerse.verse;
+      btn.classList.add(correct ? 'correct' : 'wrong');
+
+      optionsEl.querySelectorAll('.mc-option').forEach(b => {
+        b.disabled = true;
+        if (b.textContent === correctVerse.text) b.classList.add('correct');
+      });
+
+      recordVerseResult(chapter.chapter, questionVerse.verse, correct);
+      nextBtn.style.display = '';
+    });
+    optionsEl.appendChild(btn);
+  });
+
+  container.appendChild(optionsEl);
+  list.appendChild(container);
+
+  const nextBtn = document.createElement('button');
+  nextBtn.className = 'primary';
+  nextBtn.textContent = 'Next →';
+  nextBtn.style.display = 'none';
+  nextBtn.addEventListener('click', () => {
+    sessionIndex = Math.min(pairs - 1, sessionIndex + 1);
+    renderMC(chapter);
+  });
+
+  list.appendChild(buildSessionNav(
+    pairs, i,
+    () => { sessionIndex = Math.max(0, sessionIndex - 1); renderMC(chapter); },
+    () => { sessionIndex = Math.min(pairs - 1, sessionIndex + 1); renderMC(chapter); },
+    `Question ${i + 1} of ${pairs}`,
+    nextBtn
+  ));
+}
+
+// ── Shared session nav ────────────────────────────────────────────────────────
+
+function buildSessionNav(total, i, onPrev, onNext, label, centerEl) {
+  const nav = document.createElement('div');
+  nav.className = 'session-nav';
+
+  const prevBtn = document.createElement('button');
+  prevBtn.textContent = '← Prev';
+  prevBtn.disabled = i === 0;
+  prevBtn.addEventListener('click', onPrev);
+
+  const middle = document.createElement('div');
+  middle.style.display = 'flex';
+  middle.style.flexDirection = 'column';
+  middle.style.alignItems = 'center';
+  middle.style.gap = '6px';
+
+  const progressEl = document.createElement('span');
+  progressEl.className = 'session-progress';
+  progressEl.textContent = label;
+  middle.appendChild(progressEl);
+  if (centerEl) middle.appendChild(centerEl);
+
+  const nextBtn = document.createElement('button');
+  nextBtn.textContent = 'Next →';
+  nextBtn.disabled = i >= total - 1;
+  nextBtn.addEventListener('click', onNext);
+
+  nav.appendChild(prevBtn);
+  nav.appendChild(middle);
+  nav.appendChild(nextBtn);
+  return nav;
+}
+
+// ── Chapter render ────────────────────────────────────────────────────────────
+
+function renderChapter(chapterNum) {
+  currentChapter = chapterNum;
+  sessionIndex = 0;
+  document.title = `Ecclesiastes ${chapterNum} — Memorize`;
+  document.querySelectorAll('.chapter-btn').forEach(btn => {
+    btn.classList.toggle('active', parseInt(btn.dataset.chapter) === chapterNum);
+  });
+  renderCurrentMode();
 }
 
 // ── Init ─────────────────────────────────────────────────────────────────────
@@ -373,14 +516,10 @@ async function init() {
   try {
     loadProgress();
 
-    if (typeof VERSES_DATA !== 'undefined') {
-      data = VERSES_DATA;
-    } else {
-      const res = await fetch('verses.json');
-      data = await res.json();
-    }
+    data = typeof VERSES_DATA !== 'undefined'
+      ? VERSES_DATA
+      : await fetch('verses.json').then(r => r.json());
 
-    // Build chapter nav
     const nav = document.getElementById('chapter-nav');
     for (const ch of data.chapters) {
       const btn = document.createElement('button');
@@ -391,11 +530,14 @@ async function init() {
       nav.appendChild(btn);
     }
 
-    // Difficulty slider
+    document.querySelectorAll('.mode-btn').forEach(btn => {
+      btn.addEventListener('click', () => setMode(btn.dataset.mode));
+    });
+
     const slider = document.getElementById('difficulty-slider');
     slider.addEventListener('input', () => {
       setDifficulty(slider.value);
-      renderChapter(currentChapter);
+      if (studyMode === 'cloze') renderCurrentMode();
     });
     setDifficulty(slider.value);
 
