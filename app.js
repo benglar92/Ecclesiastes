@@ -97,9 +97,10 @@ function renderCurrentMode() {
   updateProgressSummary();
   const chapter = data.chapters.find(c => c.chapter === currentChapter);
   if (!chapter) return;
-  if (studyMode === 'cloze')     renderCloze(chapter);
+  if (studyMode === 'cloze')          renderCloze(chapter);
   else if (studyMode === 'flashcard') renderFlashcard(chapter);
-  else                           renderMC(chapter);
+  else if (studyMode === 'mc')        renderMC(chapter);
+  else                                renderFreeform(chapter);
 }
 
 // ── Progress summary ─────────────────────────────────────────────────────────
@@ -462,6 +463,119 @@ function renderMC(chapter) {
     `Question ${i + 1} of ${pairs}`,
     nextBtn
   ));
+}
+
+// ── Freeform writing mode ─────────────────────────────────────────────────────
+
+function splitWords(text) {
+  return text.trim().split(/\s+/).filter(w => w.length > 0);
+}
+
+function normalizeWord(w) {
+  return w.toLowerCase().replace(/[^a-z']/g, '');
+}
+
+function renderFreeform(chapter) {
+  const verses = chapter.verses;
+  const total = verses.length;
+  const i = Math.min(sessionIndex, total - 1);
+  const verseObj = verses[i];
+
+  const list = document.getElementById('verse-list');
+  list.innerHTML = '';
+
+  const container = document.createElement('div');
+  container.className = 'fw-container';
+
+  const label = document.createElement('div');
+  label.className = 'fw-label';
+  label.textContent = `Chapter ${chapter.chapter} · Verse ${verseObj.verse}`;
+  container.appendChild(label);
+
+  const hint = document.createElement('div');
+  hint.className = 'fw-hint';
+  hint.textContent = 'Write this verse from memory, word for word.';
+  container.appendChild(hint);
+
+  const textarea = document.createElement('textarea');
+  textarea.className = 'fw-textarea';
+  textarea.placeholder = 'Type the verse here…';
+  textarea.rows = 4;
+  container.appendChild(textarea);
+
+  const resultEl = document.createElement('div');
+  resultEl.className = 'fw-result';
+
+  const actions = document.createElement('div');
+  actions.className = 'verse-actions';
+
+  const checkBtn = document.createElement('button');
+  checkBtn.className = 'primary';
+  checkBtn.textContent = 'Check';
+  checkBtn.addEventListener('click', () => {
+    if (!textarea.value.trim()) return;
+
+    const answerWords = splitWords(verseObj.text);
+    const userWords = splitWords(textarea.value);
+    let correct = 0;
+
+    resultEl.innerHTML = '';
+
+    answerWords.forEach((answerWord, j) => {
+      const userWord = userWords[j] || '';
+      const isCorrect = normalizeWord(userWord) === normalizeWord(answerWord);
+      if (isCorrect) correct++;
+
+      const span = document.createElement('span');
+      span.className = `fw-word ${isCorrect ? 'correct' : 'wrong'}`;
+
+      const wordEl = document.createElement('span');
+      wordEl.className = 'fw-word-text';
+      wordEl.textContent = answerWord;
+      span.appendChild(wordEl);
+
+      if (!isCorrect && userWord) {
+        const attemptEl = document.createElement('span');
+        attemptEl.className = 'fw-attempt';
+        attemptEl.textContent = userWord;
+        span.appendChild(attemptEl);
+      }
+
+      resultEl.appendChild(span);
+      resultEl.appendChild(document.createTextNode(' '));
+    });
+
+    const score = document.createElement('div');
+    score.className = 'fw-score';
+    const pct = Math.round((correct / answerWords.length) * 100);
+    score.textContent = `${correct} / ${answerWords.length} words correct (${pct}%)`;
+    resultEl.appendChild(score);
+
+    recordVerseResult(chapter.chapter, verseObj.verse, correct === answerWords.length);
+  });
+  actions.appendChild(checkBtn);
+
+  const clearBtn = document.createElement('button');
+  clearBtn.textContent = 'Clear';
+  clearBtn.addEventListener('click', () => {
+    textarea.value = '';
+    resultEl.innerHTML = '';
+    textarea.focus();
+  });
+  actions.appendChild(clearBtn);
+
+  container.appendChild(actions);
+  container.appendChild(resultEl);
+  list.appendChild(container);
+
+  list.appendChild(buildSessionNav(
+    total, i,
+    () => { sessionIndex = Math.max(0, sessionIndex - 1); renderFreeform(chapter); },
+    () => { sessionIndex = Math.min(total - 1, sessionIndex + 1); renderFreeform(chapter); },
+    `Verse ${i + 1} of ${total}`
+  ));
+
+  textarea.focus();
 }
 
 // ── Shared session nav ────────────────────────────────────────────────────────

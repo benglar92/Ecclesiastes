@@ -459,6 +459,85 @@ button.ghost:hover { color: var(--text); background: var(--bg); border-color: va
   color: var(--text-muted);
 }
 
+/* ── Freeform writing ── */
+
+.fw-container {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--shadow);
+  margin-bottom: 8px;
+}
+
+.fw-label {
+  font-family: system-ui, sans-serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.fw-hint {
+  font-family: system-ui, sans-serif;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+.fw-textarea {
+  width: 100%;
+  font-family: Georgia, serif;
+  font-size: 1rem;
+  line-height: 1.7;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  resize: vertical;
+  outline: none;
+  margin-bottom: 10px;
+  transition: border-color 0.15s;
+}
+
+.fw-textarea:focus { border-color: var(--accent); }
+
+.fw-result {
+  margin-top: 16px;
+  font-size: 1rem;
+  line-height: 2.2;
+}
+
+.fw-word {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  vertical-align: bottom;
+  margin: 0 1px;
+}
+
+.fw-word.correct .fw-word-text { color: var(--success); }
+.fw-word.wrong   .fw-word-text { color: var(--danger); }
+
+.fw-attempt {
+  font-family: system-ui, sans-serif;
+  font-size: 0.62rem;
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+
+.fw-score {
+  font-family: system-ui, sans-serif;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
 @media (max-width: 500px) {
   header { padding: 12px 14px; }
   header h1 { font-size: 1.15rem; }
